@@ -57,3 +57,5 @@ permissions:
   ticket.comments:
     description: Gives access to add comments to a ticket
     default: true
+  ticket.notify:
+    description: Gives access to notifications about new tickets

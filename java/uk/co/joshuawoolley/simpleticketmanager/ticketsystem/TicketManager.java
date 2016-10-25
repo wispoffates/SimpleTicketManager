@@ -22,7 +22,6 @@ import uk.co.joshuawoolley.simpleticketmanager.SimpleTicketManager;
 import uk.co.joshuawoolley.simpleticketmanager.database.Queries;
 import uk.co.joshuawoolley.simpleticketmanager.enums.TicketStates;
 import uk.co.joshuawoolley.simpleticketmanager.events.SimpleTicketEvent;
-import static java.lang.Math.round;
 
 /**
 * @author Josh Woolley
