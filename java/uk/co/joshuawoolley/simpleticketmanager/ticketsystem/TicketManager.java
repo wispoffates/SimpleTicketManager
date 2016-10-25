@@ -226,7 +226,6 @@ public class TicketManager {
 				}
 				if (noneUpdated == 0) {
 					query.keepConnectionAlive();
-					Bukkit.getLogger().info("[SimpleTicketManager] Database connection has been kept alive");
 				} else if (noneUpdated == 1) {
 					Bukkit.getLogger().info("[SimpleTicketManager] Database has sucessfully updated");
 				} else {
