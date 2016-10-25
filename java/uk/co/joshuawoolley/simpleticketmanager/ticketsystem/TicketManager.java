@@ -96,7 +96,7 @@ public class TicketManager {
 		sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("createTicket"))));
 		
 		for(Player p : Bukkit.getOnlinePlayers()) {
-			if (p.hasPermission("ticket.use")) {
+			if (p.hasPermission("ticket.notify")) {
 				p.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("adminUpdate"))));
 			}
 		}
