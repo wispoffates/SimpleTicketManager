@@ -145,22 +145,26 @@ public class TicketManager {
 	 */
 	public void createComment(CommandSender sender, String player, String comment, int id) {
 		Ticket ticket = getTicket(id);
+		Player p = (Player) sender;
 		if (ticket != null) {
-			ticket.addComment(player, comment);
-			commentsToUpdate.add(ticket);
-			ticketId = ticket.getTicketId();
-			sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("createComment"))));
-                        plugin.getServer().getPluginManager().callEvent(new SimpleTicketEvent("comment", ticket));
+			if (p.hasPermission("ticket.comment") || (p.hasPermission("ticket.comment.own") && ticket.getReportingPlayer().equals(p.getUniqueId().toString()))) {
+				ticket.addComment(player, comment);
+				commentsToUpdate.add(ticket);
+				ticketId = ticket.getTicketId();
+				sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("createComment"))));
+	                        plugin.getServer().getPluginManager().callEvent(new SimpleTicketEvent("comment", ticket));
+			} else {
+				sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("commentOnlyYourTickets"))));
+			}
 		}
 	}
 	
 	/**
 	 * Task to keep updating database
 	 */
-	@SuppressWarnings("deprecation")
 	public void startTask() {
 		long delay = plugin.getConfig().getLong("updateTime") * 20;
-		Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, new BukkitRunnable() {
+		BukkitRunnable asyncTask = new BukkitRunnable() {
 			public void run(){
 				boolean successful = false;
 				int noneUpdated = 0;
@@ -232,8 +236,8 @@ public class TicketManager {
 					Bukkit.getLogger().info("[SimpleTicketManager] New tickets/comments have been added to the server");
 				}
 			}
-		}, 0L, delay);
-
+		};
+		asyncTask.runTaskTimerAsynchronously(plugin, 0L, delay);
 	}
 	
 	/**
@@ -356,37 +360,58 @@ public class TicketManager {
 	public void printTicketInfo(CommandSender sender, int id) {
 		Ticket ticket = getTicket(id);
 		ticketId = id;
+		Player player = (Player) sender;
 		if (ticket != null) {
-			sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketTitle"))));
-			sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketId"))) + ticket.getTicketId());
-			sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketStatus"))) + ticket.getState().toString());
-			
-			if (ticket.getState().equals(TicketStates.ASSIGNED)) {
-				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketAssignedTo"))) + getName(ticket.getAssignedTo()));
-			} else if (ticket.getState().equals(TicketStates.CLOSED)) {
-				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketAssignedTo"))) + getName(ticket.getAssignedTo()));
-				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketClosedBy"))) + getName(ticket.getClosedBy()));
-				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketClosedDate"))) + ticket.getClosedDate().toString());
+			String commentsList = "";
+			HashMap<Integer, HashMap<String, String>> commentsMap = ticket.getComments();
+			if (ticket.getReportingPlayer().equals(player.getUniqueId().toString()) || player.hasPermission("ticket.info")) {
+				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketTitle"))));
+				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketId"))) + ticket.getTicketId());
+				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketStatus"))) + ticket.getState().toString());
+				
+				if (ticket.getState().equals(TicketStates.ASSIGNED)) {
+					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketAssignedTo"))) + getName(ticket.getAssignedTo()));
+				} else if (ticket.getState().equals(TicketStates.CLOSED)) {
+					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketAssignedTo"))) + getName(ticket.getAssignedTo()));
+					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketClosedBy"))) + getName(ticket.getClosedBy()));
+					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketClosedDate"))) + ticket.getClosedDate().toString());
+				}
+				sender.sendMessage("");
+				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReportingPlayer"))) + getName(ticket.getReportingPlayer()));
+				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReason"))) + ticket.getReason());
+				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketDescription"))) + ticket.getDescription());
+				if (plugin.getConfig().getBoolean("players")) {
+					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketAmount"))) + ticket.getPlayerAmount());
+				}
+				if (plugin.getConfig().getBoolean("bungeecord")) {
+					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketServer"))) + ticket.getServer());
+				}
+				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketDateCreated"))) + ticket.getDateCreated().toString());
+				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketLocation"))) + ticket.getLocation() + " World: " + ticket.getWorld());
+				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkSize(checkMessages(plugin.messageData.get("ticketComments")), ticket.getComments().size())));
+				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketFooter"))));
+				if (!commentsMap.isEmpty()) {
+					for (int i = 0; i < commentsMap.size(); i++) {
+						HashMap<String, String> comments = commentsMap.get(i);
+						for (Entry<String, String> entry : comments.entrySet()) {
+								String uuid = entry.getValue();
+								String comment = entry.getKey();
+								commentsList = commentsList + ChatColor.translateAlternateColorCodes('&', checkComment(checkPlayer(checkMessages(plugin.messageData.get("comment")), uuid), comment)) + "\n";
+						}
+					}
+				} else {
+					commentsList = ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("noComments")));
+				}
+				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("commentsTitle"))));
+				sender.sendMessage(commentsList);
+				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("commentsFooter"))));
+			} else {
+				sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("onlyYourTickets"))));
 			}
-			sender.sendMessage("");
-			sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReportingPlayer"))) + getName(ticket.getReportingPlayer()));
-			sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReason"))) + ticket.getReason());
-			sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketDescription"))) + ticket.getDescription());
-			if (plugin.getConfig().getBoolean("players")) {
-				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketAmount"))) + ticket.getPlayerAmount());
-			}
-			if (plugin.getConfig().getBoolean("bungeecord")) {
-				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketServer"))) + ticket.getServer());
-			}
-			sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketDateCreated"))) + ticket.getDateCreated().toString());
-			sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketLocation"))) + ticket.getLocation() + " World: " + ticket.getWorld());
-			sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkSize(checkMessages(plugin.messageData.get("ticketComments")), ticket.getComments().size())));
-			sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketFooter"))));
 		} else {
-			sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("noId"))));
+		sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("noId"))));
 		}
 	}
-	
 	/**
 	 * Teleport a player to the report
 	 * 
@@ -450,7 +475,9 @@ public class TicketManager {
 		String view = "";
 		if (!tickets.isEmpty()) {
 			for (Ticket ticket : tickets) {
-				view = view + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("openId"))) + ticket.getTicketId() + "\n";
+				view = view + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("openId"))) + ticket.getTicketId() + " " 
+					+ ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReportingPlayer"))) + getName(ticket.getReportingPlayer()) + " "
+					+ ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReason"))) + ticket.getReason() + "\n";
 			}
 		} else {
 			view = ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("openNoTickets")));
@@ -475,7 +502,9 @@ public class TicketManager {
 		String view = "";
 		if (!tickets.isEmpty()) {
 			for (Ticket ticket : tickets) {
-				view = view + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("assignedId"))) + ticket.getTicketId() + "\n";
+				view = view + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("assignedId"))) + ticket.getTicketId() + " " 
+						+ ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReportingPlayer"))) + getName(ticket.getReportingPlayer()) + " "
+						+ ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReason"))) + ticket.getReason() + "\n";
 			}
 		} else {
 			view = ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("assignedNoTickets")));
@@ -498,7 +527,9 @@ public class TicketManager {
 		if (!tickets.isEmpty()) {
 			for (Ticket ticket : tickets) {
 				ticketId = ticket.getTicketId();
-				view = view + ChatColor.translateAlternateColorCodes('&', checkPlayer(checkMessages(plugin.messageData.get("allAssignedId")), ticket.getAssignedTo())) + "\n";
+				view = view + ChatColor.translateAlternateColorCodes('&', checkPlayer(checkMessages(plugin.messageData.get("allAssignedId")), ticket.getAssignedTo())) + " " 
+						+ ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReportingPlayer"))) + getName(ticket.getReportingPlayer()) + " "
+						+ ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReason"))) + ticket.getReason() + "\n";
 			}
 		} else {
 			view = ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("allAssignedNoTickets")));
@@ -522,7 +553,9 @@ public class TicketManager {
 		String view = "";
 		if (!tickets.isEmpty()) {
 			for (Ticket ticket : tickets) {
-				view = view + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("closedId"))) + ticket.getTicketId() + "\n";
+				view = view + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("closedId"))) + ticket.getTicketId() + " " 
+						+ ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReportingPlayer"))) + getName(ticket.getReportingPlayer()) + " "
+						+ ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReason"))) + ticket.getReason() + "\n";
 			}
 		} else {
 			view = ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("closedNoTickets")));
@@ -545,7 +578,28 @@ public class TicketManager {
 		if (!tickets.isEmpty()) {
 			for (Ticket ticket : tickets) {
 				ticketId = ticket.getTicketId();
-				view = view + ChatColor.translateAlternateColorCodes('&', checkPlayer(checkMessages(plugin.messageData.get("allClosedId")), ticket.getClosedBy())) + "\n";
+				view = view + ChatColor.translateAlternateColorCodes('&', checkPlayer(checkMessages(plugin.messageData.get("allClosedId")), ticket.getClosedBy())) + " " 
+					+ ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReportingPlayer"))) + getName(ticket.getReportingPlayer()) + " "
+					+ ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReason"))) + ticket.getReason() + "\n";
+			}
+		} else {
+			view = ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("allClosedNoTickets")));
+		}
+		sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("allClosedTitle"))));
+		sender.sendMessage(view);
+		sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("allClosedInfo"))));
+		sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("allClosedFooter"))));
+	}
+	
+	public void printAllCreatedByPlayer(CommandSender sender, String player) {
+		ArrayList<Ticket> tickets = getTicketsCreatedByPlayer(player);
+		String view = "";
+		if (!tickets.isEmpty()) {
+			for (Ticket ticket : tickets) {
+				ticketId = ticket.getTicketId();
+				view = view + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("assignedId"))) + ticket.getTicketId() + " "  
+						+ ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketReason"))) + ticket.getReason() + " " 
+						+ ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketStatus"))) + ticket.getState() + "\n";
 			}
 		} else {
 			view = ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("allClosedNoTickets")));
@@ -752,6 +806,16 @@ public class TicketManager {
 		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
 		for (Ticket ticket : allTickets) {
 			if (ticket.getState().equals(TicketStates.CLOSED)) {
+				tickets.add(ticket);
+			}
+		}
+		return tickets;
+	}
+	
+	private ArrayList<Ticket> getTicketsCreatedByPlayer(String player) {
+		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
+		for (Ticket ticket : allTickets) {
+			if (ticket.getReportingPlayer().equals(player)) {
 				tickets.add(ticket);
 			}
 		}

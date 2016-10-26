@@ -61,7 +61,7 @@ public class Messages {
 	
 	private void saveMessages(){
 		setMessage("tag", "&6[&4Ticket Manager&6]");
-		setMessage("createTicket", "&bTicket has successfully been created for you with the ticket id &6%id&b. Use this id when adding comments.");
+		setMessage("createTicket", "&bTicket has successfully been created for you with the ticket id &6%id&b.\n Use this id to add comments &c/ticket comment add <id> <message>&b or view the ticket &c/ticket info <id>&b.");
 		setMessage("createComment", "&bComment has successfully been added to ticket &6%id");
 		setMessage("adminUpdate", "&bA new report has been submitted! To view report do &c/ticket info %id");
 		setMessage("reportHelp", "&bThe following commands are available;");
@@ -73,6 +73,8 @@ public class Messages {
 		setMessage("ticketHelp4", "&b/ticket close <ticket id>  &6Close a ticket once you resolved the report");
 		setMessage("ticketHelp5", "&b/ticket teleport <ticket id>  &6Teleport to the location of the report");
 		setMessage("ticketHelp6", "&b/ticket stats  &6View how many reports are open, assigned or closed");
+		setMessage("ticketHelp7", "&b/ticket comment add <ticket id> <message> &6Add comments to existing tickets");
+		setMessage("ticketHelp8", "&b/ticket view &6To view all of your tickets");
 		setMessage("noId", "&bNo ticket with that ID");
 		setMessage("claimTicket", "&bYou have successfully claimed this ticket");
 		setMessage("alreadyClaimed", "&bThis ticket has already been claimed");
@@ -84,7 +86,7 @@ public class Messages {
 		setMessage("closeNotice", "&bTicket &6%id&b has just been closed by &6%player");
 		setMessage("ticketTitle", "&b==============&4Information&b==============");
 		setMessage("ticketId", "&aTicket ID: &6");
-		setMessage("ticketStatus", "&aStatus of ticket: &6");
+		setMessage("ticketStatus", "&aStatus: &6");
 		setMessage("ticketAssignedTo", "&aAssigned To: &6");
 		setMessage("ticketClosedBy", "&aClosed By: &6");
 		setMessage("ticketClosedDate", "&aClosed Date: &6");
@@ -144,6 +146,9 @@ public class Messages {
 		setMessage("noPermission", "&4You do not have permission to use this command!");
 		setMessage("mustBePlayer", "&4You must be a player to use this command");
 		setMessage("maxTickets", "&cYou have reached the max amount of tickets you can claim");
+		setMessage("onlyYourTickets", "&bYou can view only your own tickets");
+		setMessage("commentOnlyYourTickets", "&bYou can only comment on your own tickets");
+		
 	}
 	
 	private void setMessage(String name, String message) {

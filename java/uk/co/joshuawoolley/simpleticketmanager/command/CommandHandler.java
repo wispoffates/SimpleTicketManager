@@ -104,21 +104,30 @@ public class CommandHandler implements CommandExecutor {
 								}
 							}
 						} else {
-							sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp1"))));
+							if (player.hasPermission("ticket.view.open")) {
+								manager.printOpenTickets(sender);
+							} else if (player.hasPermission("ticket.info.own")) {
+								manager.printAllCreatedByPlayer(sender, player.getUniqueId().toString());
+								}
+							else {
+								sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("noPermission"))));
+							}
 						}
 					} else if (args[0].equalsIgnoreCase("info")) {
-						if (player.hasPermission("ticket.info")) {
+						if (player.hasPermission("ticket.info.own")) {
 							if (args.length > 1) {
 								id = Integer.parseInt(args[1]);
 								manager.printTicketInfo(sender, id);
-							} else {
+							}
+						 else {
 								sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketInfoError"))));
 							}
-						} else {
+						} else
+						{
 							sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("noPermission"))));
 						}
 					} else if (args[0].equalsIgnoreCase("comment")) {
-						if (player.hasPermission("ticket.comments")) {
+						if (player.hasPermission("ticket.comments.own")) {
 							if (args.length > 1) {
 								if (args[1].equalsIgnoreCase("add")) {
 									id = Integer.parseInt(args[2]);
@@ -127,9 +136,6 @@ public class CommandHandler implements CommandExecutor {
 										comment = comment + " " + args[i].toString();
 									}
 									manager.createComment(sender, player.getUniqueId().toString(), comment, id);
-								} else if (args[1].equalsIgnoreCase("view")) {
-									id = Integer.parseInt(args[2]);
-									manager.printComments(sender, id);
 								}
 							}
 						}
@@ -187,13 +193,28 @@ public class CommandHandler implements CommandExecutor {
 					}
 				} else {
 					sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelpTitle"))));
-					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp1"))));
-					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp2"))));
-					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp3"))));
-					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp4"))));
-					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp5"))));
-					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp6"))));
+					if (player.hasPermission("ticket.view")) {
+						sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp1"))));
+					} else if (player.hasPermission("ticket.info.own")) {
+						sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp8"))));
+					} if (player.hasPermission("ticket.info.own")) {
+						sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp2"))));
+					} if (player.hasPermission("ticket.admin")) {
+						sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp3"))));
+						sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp4"))));
+					} if (player.hasPermission("ticket.teleport")) {
+						sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp5"))));
+					} if (player.hasPermission("ticket.stats")) {
+						sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp6"))));
+					} if (player.hasPermission("ticket.comment.own")) {
+						sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketHelp7"))));
+					}
 				}
+				return true;
+			} else if (args[0].equalsIgnoreCase("reload")) {
+				plugin.reloadConfig();
+				plugin.reloadMessages();
+				sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', plugin.messageData.get("ticketReload")));
 				return true;
 			} else {
 				sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("mustBePlayer"))));

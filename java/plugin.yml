@@ -42,6 +42,9 @@ permissions:
   ticket.info:
     description: Gives access to view info on a certain ticket
     default: op
+  ticket.info.own:
+    description: Gives access to view your own tickets
+    default: true
   ticket.admin:
     description: Gives access to claim, close and unclaim tickets
     default: op
@@ -55,7 +58,11 @@ permissions:
     description: Gives access to be able to reload the config and messages files
     default: op
   ticket.comments:
-    description: Gives access to add comments to a ticket
+    description: Gives access to add comments to all tickets
+    default: true
+  ticket.comments.own:
+    description: Gives access to add comments to your own tickets
     default: true
   ticket.notify:
     description: Gives access to notifications about new tickets
+    default: op
