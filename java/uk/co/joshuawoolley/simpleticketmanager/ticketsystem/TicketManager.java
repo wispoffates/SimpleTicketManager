@@ -372,7 +372,6 @@ public class TicketManager {
 				if (ticket.getState().equals(TicketStates.ASSIGNED)) {
 					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketAssignedTo"))) + getName(ticket.getAssignedTo()));
 				} else if (ticket.getState().equals(TicketStates.CLOSED)) {
-					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketAssignedTo"))) + getName(ticket.getAssignedTo()));
 					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketClosedBy"))) + getName(ticket.getClosedBy()));
 					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("ticketClosedDate"))) + ticket.getClosedDate().toString());
 				}
