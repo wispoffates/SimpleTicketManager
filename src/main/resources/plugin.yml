@@ -1,0 +1,71 @@
+name: SimpleTicketManager
+main: uk.co.joshuawoolley.simpleticketmanager.SimpleTicketManager
+version: maven-version-number
+authors: [graywolf336, Jwoolley]
+load: POSTWORLD
+api-version: 1.13
+
+commands:
+  report:
+    description: Commands to report players
+    usage: /<command> [reason] [description]
+    permission: report.use
+  ticket:
+    description: Commands to look at report
+    usage: /<command> [option] [ticket id]
+    permission: ticket.use
+
+permissions:
+  report.use:
+    description: Gives access to do reports
+    default: true
+  ticket.view:
+    description: Gives access to view reports
+    children:
+       ticket.view.open: true
+       ticket.view.assigned: true
+       ticket.view.assigned.all: true
+       ticket.view.closed: true
+       ticket.view.closed.all: true
+  ticket.view.open:
+     description: Gives access to view open reports
+     default: op
+  ticket.view.assigned:
+     description: Gives access to view assigned reports
+     default: op
+  ticket.view.assigned.all:
+     description: Gives access to view all assigned reports
+     default: op
+  ticket.view.closed:
+     description: Gives access to view closed reports
+     default: op
+  ticket.view.closed.all:
+     description: Gives access to view all closed reports
+     default: op
+  ticket.info:
+    description: Gives access to view info on a certain ticket
+    default: op
+  ticket.info.own:
+    description: Gives access to view your own tickets
+    default: true
+  ticket.admin:
+    description: Gives access to claim, close and unclaim tickets
+    default: op
+  ticket.teleport:
+    description: Gives access to be able to teleport to tickets
+    default: op
+  ticket.stats:
+    description: Gives access to view ticket stats
+    default: op
+  ticket.reload:
+    description: Gives access to be able to reload the config and messages files
+    default: op
+  ticket.comments:
+    description: Gives access to add comments to all tickets
+    default: true
+  ticket.comments.own:
+    description: Gives access to add comments to your own tickets
+    default: true
+  ticket.notify:
+    description: Gives access to notifications about new tickets
+    default: op
