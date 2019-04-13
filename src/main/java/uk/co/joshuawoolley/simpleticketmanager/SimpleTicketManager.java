@@ -5,9 +5,10 @@ import java.sql.SQLException;
 import java.util.HashMap;
 
 import org.bukkit.Bukkit;
-import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import uk.co.joshuawoolley.simpleticketmanager.command.CommandHandler;
+
+import uk.co.joshuawoolley.simpleticketmanager.command.ReportCommandHandler;
+import uk.co.joshuawoolley.simpleticketmanager.command.TicketCommandHandler;
 import uk.co.joshuawoolley.simpleticketmanager.database.MySQL;
 import uk.co.joshuawoolley.simpleticketmanager.database.Queries;
 import uk.co.joshuawoolley.simpleticketmanager.database.SQLite;
@@ -69,10 +70,10 @@ public class SimpleTicketManager extends JavaPlugin {
 			getLogger().severe("There was a error loading in the tickets from the database!");
 			e.printStackTrace();
 		}
-		this.getCommand("report").setExecutor(new CommandHandler(this, manager));
-		this.getCommand("ticket").setExecutor(new CommandHandler(this, manager));
-		PluginManager pm = this.getServer().getPluginManager();
-		pm.registerEvents(new PlayerJoin(this, manager), this);
+
+		this.setupCommands();
+		this.getServer().getPluginManager().registerEvents(new PlayerJoin(this, manager), this);
+
 		manager.startTask();
 		
 		getLogger().info("Simple Ticket Managers has been successfully enabled!");
@@ -83,12 +84,22 @@ public class SimpleTicketManager extends JavaPlugin {
 	 */
 	public void onDisable() {
 		manager.onDisableUpdate();
-		try{
+		try {
 			connection.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		getLogger().info("Simple Ticket Manager has been disabled");
+	}
+	
+	private void setupCommands() {
+	    ReportCommandHandler rch = new ReportCommandHandler(this, manager);
+	    this.getCommand("report").setExecutor(rch);
+        this.getCommand("report").setTabCompleter(rch);
+
+        TicketCommandHandler tch = new TicketCommandHandler(this, manager);
+        this.getCommand("ticket").setExecutor(tch);
+        this.getCommand("ticket").setTabCompleter(tch);
 	}
 	
 	/**
@@ -102,7 +113,7 @@ public class SimpleTicketManager extends JavaPlugin {
 		Queries query = new Queries(connection);
 		boolean created = query.createMySQLTable();
 		if(!created) {
-		getLogger().info("Error while creating MySQL database table. Do you have the correct database details in the config?");
+		    getLogger().info("Error while creating MySQL database table. Do you have the correct database details in the config?");
 			Bukkit.getPluginManager().disablePlugin(this);
 		}
 	}
@@ -111,7 +122,7 @@ public class SimpleTicketManager extends JavaPlugin {
 		Queries query = new Queries(connection);
 		boolean created = query.createSQLiteTable();
 		if(!created) {
-		getLogger().info("Error while creating SQLite database table. Please report this to the plugin developer");
+		    getLogger().info("Error while creating SQLite database table. Please report this to the plugin developer");
 			Bukkit.getPluginManager().disablePlugin(this);
 		}
 	}

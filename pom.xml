@@ -38,7 +38,7 @@
 	<build>
 		<directory>target</directory>
 		<outputDirectory>target/classes</outputDirectory>
-		<defaultGoal>clean install test</defaultGoal>
+		<defaultGoal>clean install</defaultGoal>
 
 		<resources>
 			<resource>
