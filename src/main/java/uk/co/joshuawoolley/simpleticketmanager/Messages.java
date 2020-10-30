@@ -85,7 +85,7 @@ public class Messages {
 	    config.set("ticketHelp4", "&b/ticket close <ticket id>  &6Close a ticket once you resolved the report");
 		config.set("ticketHelp5", "&b/ticket teleport <ticket id>  &6Teleport to the location of the report");
 		config.set("ticketHelp6", "&b/ticket stats  &6View how many reports are open, assigned or closed");
-		config.set("ticketHelp7", "&b/ticket comment add <ticket id> <message> &6Add comments to existing tickets");
+		config.set("ticketHelp7", "&b/ticket comment <ticket id> <message> &6Add comments to existing tickets");
 		config.set("ticketHelp8", "&b/ticket view &6To view all of your tickets");
 		config.set("noId", "&bNo ticket with that ID");
 		config.set("claimTicket", "&bYou have successfully claimed this ticket");

@@ -31,22 +31,20 @@ public class CommentCommand implements ICommand {
             return true;
         }
         
-        if (args.length > 1) {
-            if (args[1].equalsIgnoreCase("add")) {
-                int id = 0;
-                try {
-                    id = Integer.parseInt(args[2]);
-                } catch(NumberFormatException e) {
-                    return true;
-                }
-
-                String comment = "";
-                for (int i = 3; i < args.length; i++) {
-                    comment = comment + " " + args[i].toString();
-                }
-
-                manager.createComment(player, player.getUniqueId().toString(), comment, id);
+        if (args.length >= 1) {
+            int id = 0;
+            try {
+                id = Integer.parseInt(args[1]);
+            } catch(NumberFormatException e) {
+                return true;
             }
+
+            String comment = "";
+            for (int i = 2; i < args.length; i++) {
+                comment = comment + " " + args[i].toString();
+            }
+
+            manager.createComment(player, player.getUniqueId().toString(), comment, id);
         }
         
         return true;

@@ -14,6 +14,7 @@ import org.bukkit.util.StringUtil;
 
 import uk.co.joshuawoolley.simpleticketmanager.SimpleTicketManager;
 import uk.co.joshuawoolley.simpleticketmanager.command.tickets.ClaimCommand;
+import uk.co.joshuawoolley.simpleticketmanager.command.tickets.CloseCommand;
 import uk.co.joshuawoolley.simpleticketmanager.command.tickets.CommentCommand;
 import uk.co.joshuawoolley.simpleticketmanager.command.tickets.InfoCommand;
 import uk.co.joshuawoolley.simpleticketmanager.command.tickets.StatsCommand;
@@ -41,6 +42,7 @@ public class TicketCommandHandler implements TabCompleter, CommandExecutor {
         this.commands.put("teleport", new TeleportCommand(pl, manager));
         this.commands.put("stats", new StatsCommand(pl, manager));
         this.commands.put("unclaim", new UnclaimCommand(pl, manager));
+        this.commands.put("close", new CloseCommand(pl, manager));
     }
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {

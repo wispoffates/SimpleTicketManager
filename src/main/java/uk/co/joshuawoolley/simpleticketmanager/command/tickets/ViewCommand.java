@@ -18,7 +18,7 @@ public class ViewCommand implements ICommand {
     private static final TabOption[] options = new TabOption[] {
             new TabOption("open", "ticket.view.open"),
             new TabOption("assigned", "ticket.view.assigned"),
-            new TabOption("closed", "ticket.view.closed"),
+            new TabOption("closed", "ticket.view.closed")
     };
 
     private SimpleTicketManager plugin;

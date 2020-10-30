@@ -3,6 +3,7 @@ package uk.co.joshuawoolley.simpleticketmanager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -20,7 +21,7 @@ import uk.co.joshuawoolley.simpleticketmanager.ticketsystem.TicketManager;
  */
 public class SimpleTicketManager extends JavaPlugin {
 	
-	public HashMap<String, String> messageData = new HashMap<String, String>();
+	public Map<String, String> messageData = new HashMap<>();
 	private Connection connection = null;
 	private Messages messages;
 	private TicketManager manager;
@@ -28,6 +29,7 @@ public class SimpleTicketManager extends JavaPlugin {
 	/**
 	 * Enable method
 	 */
+	@Override
 	public void onEnable() {
 		getLogger().info("Simple Ticket Manager is starting up. This may take a while!");
 
@@ -73,8 +75,6 @@ public class SimpleTicketManager extends JavaPlugin {
 
 		this.setupCommands();
 		this.getServer().getPluginManager().registerEvents(new PlayerJoin(this, manager), this);
-
-		manager.startTask();
 		
 		getLogger().info("Simple Ticket Managers has been successfully enabled!");
 	}
@@ -82,8 +82,8 @@ public class SimpleTicketManager extends JavaPlugin {
 	/**
 	 * Disable method
 	 */
+	@Override
 	public void onDisable() {
-		manager.onDisableUpdate();
 		try {
 			connection.close();
 		} catch (SQLException e) {

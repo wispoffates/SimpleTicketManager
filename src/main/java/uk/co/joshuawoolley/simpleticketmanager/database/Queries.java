@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import uk.co.joshuawoolley.simpleticketmanager.ticketsystem.Ticket;
+
 public class Queries {
 	
 	private Connection connection = null;
@@ -113,7 +115,7 @@ public class Queries {
 	 * 
 	 * @return true if successful or false if unsuccessful
 	 */
-	public boolean insertTicket(String uuid, String reason, String description, int playerAmount, String world, long date, String location, String server) {
+	private boolean insertTicket(String uuid, String reason, String description, int playerAmount, String world, long date, String location, String server) {
 		PreparedStatement ps;
 		try {
 			ps = connection.prepareStatement("INSERT INTO tickets (uuid, reason, description, server_name, player_amount, world, created_date, location) VALUES ('" + uuid + "', ?, ?, ?, '" + playerAmount + "', '" + world + "', '" + date + "', '" + location + "');");
@@ -126,6 +128,11 @@ public class Queries {
 			e.printStackTrace();
 			return false;
 		}
+	}
+
+	/**Insert a ticket */
+	public boolean insertTicket(Ticket ticket) {
+		return this.insertTicket(ticket.getReportingPlayer(), ticket.getReason(), ticket.getDescription(), ticket.getPlayerAmount(), ticket.getWorld(), ticket.getDateCreated().getTime(), ticket.getLocation(), ticket.getServer());
 	}
 	
 	/**

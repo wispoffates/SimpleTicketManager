@@ -45,7 +45,7 @@ public class ReportCommandHandler implements TabCompleter, CommandExecutor {
                 description = description + " " + args[i];
             }
 
-            manager.createTicket(sender, player.getUniqueId().toString(), args[0], description, player.getLocation(), plugin.getServer().getServerName(), Bukkit.getOnlinePlayers().size());
+            manager.createTicket(sender, player.getUniqueId().toString(), args[0], description, player.getLocation(), player.getLocation().getWorld().getName(), Bukkit.getOnlinePlayers().size());
         } else {
             sender.sendMessage(prefix + ChatColor.translateAlternateColorCodes('&', plugin.messageData.get("reportHelp")));
             sender.sendMessage(prefix + ChatColor.translateAlternateColorCodes('&', plugin.messageData.get("createHelp")));

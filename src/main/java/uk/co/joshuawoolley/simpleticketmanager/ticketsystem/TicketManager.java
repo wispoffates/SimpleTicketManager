@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
@@ -16,7 +16,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import uk.co.joshuawoolley.simpleticketmanager.SimpleTicketManager;
 import uk.co.joshuawoolley.simpleticketmanager.database.Queries;
@@ -38,10 +37,8 @@ public class TicketManager {
 	private int maxTickets;
 	
 	private ArrayList<Ticket> allTickets;
-	private ArrayList<Ticket> ticketsToUpdate;
-	private ArrayList<Ticket> commentsToUpdate;
 	
-	private HashMap<String, Integer> claimedAmount;
+	private Map<String, Integer> claimedAmount;
 	
 	/**
 	 * Create manager to control Tickets
@@ -55,10 +52,8 @@ public class TicketManager {
 		this.plugin = plugin;
 		this.query = query;
 		this.maxTickets = maxTickets;
-		allTickets = new ArrayList<Ticket>();
-		ticketsToUpdate = new ArrayList<Ticket>();
-		commentsToUpdate = new ArrayList<Ticket>();
-		claimedAmount = new HashMap<String, Integer>();
+		allTickets = new ArrayList<>();
+		claimedAmount = new HashMap<>();
 		
 		tag = ChatColor.translateAlternateColorCodes('&',plugin.messageData.get("tag"));
 	}
@@ -91,7 +86,6 @@ public class TicketManager {
 		ticketId = newTicket.getTicketId();
 		
 		allTickets.add(newTicket);
-		ticketsToUpdate.add(newTicket);
 		currentTicketId++;
 		sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("createTicket"))));
 		
@@ -100,11 +94,12 @@ public class TicketManager {
 				p.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("adminUpdate"))));
 			}
 		}
-                plugin.getServer().getPluginManager().callEvent(new SimpleTicketEvent("create", newTicket));
+		plugin.getServer().getPluginManager().callEvent(new SimpleTicketEvent("create", newTicket));
+		query.insertTicket(newTicket);
 	}
 	
 	/**
-	 * Create a new ticket and add it to allTickets
+	 * Create a new ticket and add it to allTickets.  Used on initial load of tickets.
 	 * 
 	 * @param player
 	 * 			Player doing report
@@ -149,95 +144,14 @@ public class TicketManager {
 		if (ticket != null) {
 			if (p.hasPermission("ticket.comment") || (p.hasPermission("ticket.comment.own") && ticket.getReportingPlayer().equals(p.getUniqueId().toString()))) {
 				ticket.addComment(player, comment);
-				commentsToUpdate.add(ticket);
 				ticketId = ticket.getTicketId();
+				query.insertComment(player, comment, id);
 				sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("createComment"))));
 	                        plugin.getServer().getPluginManager().callEvent(new SimpleTicketEvent("comment", ticket));
 			} else {
 				sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("commentOnlyYourTickets"))));
 			}
 		}
-	}
-	
-	/**
-	 * Task to keep updating database
-	 */
-	public void startTask() {
-		long delay = plugin.getConfig().getLong("updateTime") * 20;
-		BukkitRunnable asyncTask = new BukkitRunnable() {
-			public void run(){
-				boolean successful = false;
-				int noneUpdated = 0;
-				if (!ticketsToUpdate.isEmpty()) {
-					Iterator<Ticket> it = ticketsToUpdate.iterator();
-					while (it.hasNext()) {
-						Ticket ticket = it.next();
-						if (ticket.getState().equals(TicketStates.OPEN)) {
-							try {
-								if (!query.checkIfTicketExists(ticket.getTicketId())) {
-									successful = query.insertTicket(ticket.getReportingPlayer(), ticket.getReason(), ticket.getDescription(), ticket.getPlayerAmount(), ticket.getWorld(), ticket.getDateCreated().getTime(), ticket.getLocation(), ticket.getServer());
-								} else {
-									successful = query.setUnclaimed(ticket.getTicketId());
-								}
-							} catch (SQLException e) {
-								e.printStackTrace();
-							}
-						} else if (ticket.getState().equals(TicketStates.ASSIGNED)) {
-							successful = query.setAssigned(ticket.getAssignedTo(), ticket.getTicketId());
-						} else if (ticket.getState().equals(TicketStates.CLOSED)) {
-							successful = query.setClosed(ticket.getClosedBy(), ticket.getAssignedTo(), ticket.getTicketId(), ticket.getClosedDate().getTime());
-						}
-						if (!successful) {
-							Bukkit.getLogger().severe("[SimpleTicketManager] There was a problem with updating 1 ticket to the database");
-						}
-						it.remove();
-						noneUpdated = 1;
-					}
-				}
-				if (!commentsToUpdate.isEmpty()) {
-					Iterator<Ticket> it = commentsToUpdate.iterator();
-					while (it.hasNext()) {
-						Ticket ticket = it.next();
-						HashMap<Integer, HashMap<String, String>> commentsMap = ticket.getComments();
-						for (Entry<Integer, HashMap<String, String>> entryComments : commentsMap.entrySet()) {
-							HashMap<String, String> comments = entryComments.getValue();
-							for (Entry<String, String> entry : comments.entrySet()) {
-								try {
-									if(!query.checkIfCommentExists(entry.getValue(),entry.getKey(), ticket.getTicketId())) {
-										query.insertComment(entry.getValue(),entry.getKey(), ticket.getTicketId());
-										noneUpdated = 1;
-									}
-								} catch (SQLException e) {
-									e.printStackTrace();
-								}
-							}
-						}
-						it.remove();
-					}
-				}
-				if (plugin.getConfig().getBoolean("mysql")) {
-					int currentTickets = allTickets.size();
-					allTickets.clear();
-					try {
-						loadInTickets();
-					} catch (SQLException e) {
-						e.printStackTrace();
-					}
-					int newTickets = allTickets.size();
-					if (newTickets > currentTickets) {
-						noneUpdated = 2;
-					}
-				}
-				if (noneUpdated == 0) {
-					query.keepConnectionAlive();
-				} else if (noneUpdated == 1) {
-					Bukkit.getLogger().info("[SimpleTicketManager] Database has sucessfully updated");
-				} else {
-					Bukkit.getLogger().info("[SimpleTicketManager] New tickets/comments have been added to the server");
-				}
-			}
-		};
-		asyncTask.runTaskTimerAsynchronously(plugin, 0L, delay);
 	}
 	
 	/**
@@ -262,7 +176,7 @@ public class TicketManager {
 				if (amount < maxTickets) {
 					ticket.setAssignedTo(player);
 					ticket.setState(TicketStates.ASSIGNED);
-					ticketsToUpdate.add(ticket);
+					query.setAssigned(player, id);
 					increaseClaimedAmount(player);
 					sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("claimTicket"))));
                                         plugin.getServer().getPluginManager().callEvent(new SimpleTicketEvent("claim", ticket));
@@ -302,7 +216,7 @@ public class TicketManager {
 					ticket.setClosedBy(player);
 					ticket.setClosedDate(new Date());
 					ticket.setState(TicketStates.CLOSED);
-					ticketsToUpdate.add(ticket);
+					query.setClosed(player, ticket.getAssignedTo(), id, ticket.getClosedDate().getTime());
 					decreaseClaimedAmount(ticket.getAssignedTo());
 					sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("closeTicket"))));
 					if (plugin.getConfig().getBoolean("closenotice")) {
@@ -338,7 +252,7 @@ public class TicketManager {
 				decreaseClaimedAmount(ticket.getAssignedTo());
 				ticket.setAssignedTo(null);
 				ticket.setState(TicketStates.OPEN);
-				ticketsToUpdate.add(ticket);
+				query.setUnclaimed(id);
 				sender.sendMessage(tag + ChatColor.translateAlternateColorCodes('&', checkMessages(plugin.messageData.get("unclaimTicket"))));
                                 plugin.getServer().getPluginManager().callEvent(new SimpleTicketEvent("unclaim", ticket));
 			} else {
@@ -699,53 +613,6 @@ public class TicketManager {
 		}
 	}
 	
-	/**
-	 * Update the database on shutdown
-	 */
-	public void onDisableUpdate() {
-		if (ticketsToUpdate.size() > 0) {
-			for(Ticket ticket : ticketsToUpdate) {
-				if (ticket.getState().equals(TicketStates.OPEN)) {
-					try {
-						if (query.checkIfTicketExists(ticket.getTicketId())) {
-							query.insertTicket(ticket.getReportingPlayer(), ticket.getReason(), ticket.getDescription(), ticket.getPlayerAmount(), ticket.getWorld(), ticket.getDateCreated().getTime(), ticket.getLocation(), ticket.getServer());
-						} else {
-							query.setUnclaimed(ticket.getTicketId());
-						}
-					} catch (SQLException e) {
-						e.printStackTrace();
-						Bukkit.getLogger().severe("There was a problem with updating 1 ticket to the database");
-					}
-				} else if (ticket.getState().equals(TicketStates.ASSIGNED)) {
-					query.setAssigned(ticket.getAssignedTo(), ticket.getTicketId());
-				} else if (ticket.getState().equals(TicketStates.CLOSED)) {
-					query.setClosed(ticket.getClosedBy(), ticket.getAssignedTo(), ticket.getTicketId(), ticket.getClosedDate().getTime());
-				}
-			}
-		}
-		if (!commentsToUpdate.isEmpty()) {
-			Iterator<Ticket> it = commentsToUpdate.iterator();
-			while (it.hasNext()) {
-				Ticket ticket = it.next();
-				HashMap<Integer, HashMap<String, String>> commentsMap = ticket.getComments();
-				for (Entry<Integer, HashMap<String, String>> entryComments : commentsMap.entrySet()) {
-					HashMap<String, String> comments = entryComments.getValue();
-					for (Entry<String, String> entry : comments.entrySet()) {
-						try {
-							if(!query.checkIfCommentExists(entry.getValue(),entry.getKey(), ticket.getTicketId())) {
-								query.insertComment(entry.getValue(),entry.getKey(), ticket.getTicketId());
-							}
-						} catch (SQLException e) {
-							e.printStackTrace();
-						}
-				    }
-				}
-				it.remove();
-			}
-		}
-		Bukkit.getLogger().info("[SimpleTicketManager] Database has been successfully updated");
-	}
-	
 	private Ticket getTicket(int id) {
 		Ticket selectedTicket = null;
 		for (Ticket ticket : allTickets) {
@@ -760,7 +627,7 @@ public class TicketManager {
 	private ArrayList<Ticket> getTicketsOpen() {
 		ArrayList<Ticket> tickets = new ArrayList<Ticket>();
 		for (Ticket ticket : allTickets) {
-			if (ticket.getState().equals(TicketStates.OPEN)) {
+			if (!ticket.getState().equals(TicketStates.CLOSED)) {
 				tickets.add(ticket);
 			}
 		}
